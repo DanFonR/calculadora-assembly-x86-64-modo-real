@@ -11,10 +11,20 @@ section .data
     erro_msg db 'Opcao invalida, escolha novamente.', 10
              db 'Opcao: ', 0
 
-    resultado_msg db 'O resultado da operacao e: ', 0
+    num1_msg db 'Digite o o numero A: ', 0
+    num2_msg db 'Digite o o numero B: ', 0
+    
+    soma_msg db ' + ', 0
+    subtracao_msg db ' - ', 0
+    multiplicacao_msg db ' * ', 0 
+    divisao_msg db ' / ', 0
+    resultado_msg db ' = ', 0
 
 section .bss
     opcao resb 2                  ; resb 2 para armazenar o numero e o \n quando o usuario apertar enter
+    num1 resb 16
+    num2 resb 16
+    resultado resb 16
 
 section .text
     global _start
@@ -32,8 +42,17 @@ _start:
     mov rdi, opcao
     call print_string
 
-    mov rdi, resultado_msg
-    call print_string
+    call ler_numeros
+
+    mov al, [opcao]
+    cmp al, '1'
+    je soma
+    cmp al, '2'
+    je subtracao
+    cmp al, '3'
+    je multiplicacao
+    cmp al, '4'
+    je divisao
 
     call finalizar_programa       ; Finaliza o programa
 
@@ -88,6 +107,93 @@ verificar_opcao:
 
     .opcao_valida:
         ret
+
+; Funcao ler_string: Armazena a string em uma variavel
+; Parametros:
+;   rsi -> Ponteiro para a variavel que sera armazenada a string
+ler_string:
+    mov rdi, 0                    ; Leitura da entrada padrão (0 = STDIN)
+    mov rdx, 16                   ; Número de bytes a serem lidos
+    mov rax, 0                    ; Número da chamada sys_read
+    syscall                       ; Chama o sistema para ler a entrada
+    ret
+
+converte_para_int:
+    ret
+
+ler_numeros:
+    mov rdi, num1_msg
+    call print_string
+
+    mov rsi, num1
+    call ler_string
+
+    mov rdi, num2_msg
+    call print_string
+
+    mov rsi, num2
+    call ler_string
+    ret
+
+soma:
+    mov rdi, num1
+    call print_string
+
+    mov rdi, soma_msg
+    call print_string
+
+    mov rdi, num2
+    call print_string
+
+    mov rdi, resultado_msg
+    call print_string
+
+    jmp finalizar_programa
+
+subtracao:
+    mov rdi, num1
+    call print_string
+
+    mov rdi, subtracao_msg
+    call print_string
+
+    mov rdi, num2
+    call print_string
+
+    mov rdi, resultado_msg
+    call print_string
+
+    jmp finalizar_programa
+
+multiplicacao:
+    mov rdi, num1
+    call print_string
+
+    mov rdi, multiplicacao_msg
+    call print_string
+
+    mov rdi, num2
+    call print_string
+
+    mov rdi, resultado_msg
+    call print_string
+
+    jmp finalizar_programa
+
+divisao:
+    mov rdi, num1
+    call print_string
+
+    mov rdi, divisao_msg
+    call print_string
+
+    mov rdi, num2
+    call print_string
+
+    mov rdi, resultado_msg
+    call print_string
+
+    jmp finalizar_programa
 
 ; Funcao finalizar_programa: Finaliza o programa e retorna 0 (sucesso)
 finalizar_programa:
