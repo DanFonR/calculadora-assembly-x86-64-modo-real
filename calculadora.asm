@@ -7,6 +7,9 @@ section .data
              db 'Opcao: ', 0
 
     opcao_escolhida_msg db 'Opcao escolhida: ', 0
+    
+    erro_msg db 'Opcao invalida, escolha novamente.', 10
+             db 'Opcao: ', 0
 
     resultado_msg db 'O resultado da operacao e: ', 0
 
@@ -21,6 +24,7 @@ _start:
     call print_string             ; Chama a função print_message
 
     call coletar_opcao            ; Chama a função que coleta a opção
+    call verificar_opcao          ; Verifica a opcao escolhida
     
     mov rdi, opcao_escolhida_msg
     call print_string
@@ -63,6 +67,27 @@ coletar_opcao:
     mov rax, 0                    ; Número da chamada sys_read
     syscall                       ; Chama o sistema para ler a entrada
     ret
+
+verificar_opcao:
+    ; Verifica se a opção está entre '1' e '4'
+    mov al, [opcao]               ; Simblozado por [] o valor e passado para al, um registrador de 1 byte
+    cmp al, '1'                   ; Compara com o valor '1'
+    je .opcao_valida              ; Se for igual a '1', pula para .opcao_valida
+    cmp al, '2'
+    je .opcao_valida
+    cmp al, '3'
+    je .opcao_valida
+    cmp al, '4'
+    je .opcao_valida
+
+    ; Se nao for uma opcao valida ele mostra uma mensagem de erro e pede para o usuario digitar novamente
+    mov rdi, erro_msg
+    call print_string
+    call coletar_opcao            ; Pede para o usuário inserir novamente
+    call verificar_opcao          ; Valida a nova opção
+
+    .opcao_valida:
+        ret
 
 ; Funcao finalizar_programa: Finaliza o programa e retorna 0 (sucesso)
 finalizar_programa:
