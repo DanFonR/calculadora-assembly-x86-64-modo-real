@@ -1,5 +1,5 @@
 section .data
-    menu_msg db 'Escolha uma opcao:', 10
+    menu_msg db 'Escolha uma opcao:', 10    ; db: define byte, uma sequencia de bytes sob a etiqueta menu_msg
              db '1 - Soma', 10
              db '2 - Subtracao', 10
              db '3 - Multiplicacao', 10
@@ -20,11 +20,11 @@ section .data
     divisao_msg db ' / ', 0
     resultado_msg db ' = ', 0
 
-    newline db 10
+    nova_linha db 10
 
 section .bss
     opcao resb 2                  ; resb 2 para armazenar o numero e o \n quando o usuario apertar enter
-    num1 resb 16
+    num1 resb 16                  ; resb 16: reserva 16 bytes para armazenar numeros de ate 15 digitos
     num2 resb 16
     resultado_int resb 16
     resultado_str resb 16
@@ -66,7 +66,7 @@ _start:
 ; Funcao print_string: Imprime uma string no terminal
 ; Parametros:
 ;   rdi -> Ponteiro para a string a ser impressa
-;   rsi -> boolean (0 retira newline caso tenha, 1 imprime com newline)
+;   rsi -> boolean (0 retira caracter de nova linha caso tenha, 1 imprime com ele)
 print_string:
     ; Calcula o comprimento da string
     xor rdx, rdx                  ; rdx sera o comprimento da string (inicializa o registrador com 0)
@@ -76,14 +76,14 @@ print_string:
         mov al, byte [rdi + rdx]  ; Carrega o próximo byte da string (rdi: endereco inicial, rdx: tamanho da string)
         test al, al               ; Faz um E lógico entre 'al' e 'al' (verifica se 'al' é zero)
         jz .tam_encontrado        ; Se 'al' for zero, salta para .tam_encontrado
-        inc rdx                   ; Incrementa rdx (rdx++)
+        inc rdx                   ; Incretiraenta rdx (rdx++)
         jmp .prox_char            ; Volta para o inicio de .prox_char fazendo um loop
 
     .tam_encontrado:
         cmp rsi, 0
-        je .newline_rem
+        je .nova_linha_retira
         cmp rsi, 1
-        je .newline_add
+        je .nova_linha_adiciona
         ; Chama a sys_write para imprimir a string
     .impressao:
         mov rsi, rdi              ; Ponteiro para a string que ja esta em rdi
@@ -92,7 +92,7 @@ print_string:
         syscall                   ; Chamada de sistema para escrever
         ret                       ; Retorna para onde a funcao foi chamada
     
-    .newline_rem:
+    .nova_linha_retira:
         mov al, byte [rdi + rdx - 1]
         cmp al, 10
         jne .impressao
@@ -102,7 +102,7 @@ print_string:
         sub rdi, rdx
         jmp .impressao
 
-    .newline_add:
+    .nova_linha_adiciona:
         mov al, byte [rdi + rdx - 1]
         cmp al, 10
         je .impressao
@@ -116,7 +116,7 @@ print_string:
 coletar_opcao:
     mov rdi, 0                    ; Leitura da entrada padrão (0 = STDIN)
     mov rsi, opcao                ; Ponteiro para a variável opcao
-    mov rdx, 2                    ; Número de bytes a serem lidos (apenas 1 caractere para a opção)
+    mov rdx, 2                    ; Número de bytes a seretira lidos (apenas 1 caractere para a opção)
     mov rax, 0                    ; Número da chamada sys_read
     syscall                       ; Chama o sistema para ler a entrada
     ret
@@ -147,7 +147,7 @@ verificar_opcao:
 ;   rsi -> Ponteiro para a variavel que sera armazenada a string
 ler_string:
     mov rdi, 0                    ; Leitura da entrada padrão (0 = STDIN)
-    mov rdx, 16                   ; Número de bytes a serem lidos
+    mov rdx, 16                   ; Número de bytes a seretira lidos
     mov rax, 0                    ; Número da chamada sys_read
     syscall                       ; Chama o sistema para ler a entrada
     ret
@@ -164,10 +164,10 @@ str_para_int:
     .loop:
         movzx rdx, byte [rsi + rcx]  ; Carrega o próximo caractere da string
         test rdx, rdx                ; Verifica se é o final da string ('\0')
-        jz .done
+        jz .terminado
 
         cmp rdx, 10                  ; Verifica se é uma quebra de linha '\n'
-        je .done
+        je .terminado
 
         sub rdx, '0'                 ; Converte caractere ASCII para número (0-9)
         imul rax, rax, 10            ; Multiplica rax por 10 (deslocamento decimal)
@@ -175,7 +175,7 @@ str_para_int:
         inc rcx                      ; Avança para o próximo caractere
         jmp .loop
 
-    .done:
+    .terminado:
         ret                          ; Retorna com o número inteiro armazenado em rax
 
 
@@ -192,12 +192,12 @@ int_para_str:
     dec rsi
 
     test rax, rax                    ; Verifica se rax é zero
-    jnz .loop_start
+    jnz .loop_comeca
 
     mov byte [rsi], '0'              ; Se rax for zero, escreve '0' na string
     ret
 
-    .loop_start:
+    .loop_comeca:
         push rcx
         mov rcx, 10
         
