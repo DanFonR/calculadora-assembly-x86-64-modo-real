@@ -31,11 +31,11 @@ section .bss
     str_buffer resb 16
 
 section .text
-    global _start
+    global _start                 ; expoe o simbolo _start para o montador
 
 _start:
     mov rdi, menu_msg             ; Passa o endereço de menu_mgs para o parâmetro (rdi)
-    mov rsi, 0
+    mov rsi, 0                    ; Passa um boolean, dizendo que nao sera impresso caracter de nova linha
     call print_string             ; Chama a função print_message
 
     call coletar_opcao            ; Chama a função que coleta a opção
@@ -46,13 +46,13 @@ _start:
     call print_string
     
     mov rdi, opcao
-    mov rsi, 1
+    mov rsi, 1                    ; Passa um boolean, dizendo que o caracter de nova linha sera impresso 
     call print_string
 
     call ler_numeros
 
-    mov al, [opcao]
-    cmp al, '1'
+    mov al, [opcao]               ; Passa o valor do 1o byte apontado pela etiqueta opcao para os 8 bits mais baixos do rax (al)
+    cmp al, '1'                   ; Compara a entrada com digitos ASCII, e pula para a etiqueta correspondente
     je soma
     cmp al, '2'
     je subtracao
@@ -80,10 +80,11 @@ print_string:
         jmp .prox_char            ; Volta para o inicio de .prox_char fazendo um loop
 
     .tam_encontrado:
-        cmp rsi, 0
+        cmp rsi, 0                ; Checagem de rsi (se nem 0 nem 1, adiciona o caracter de nova linha assim mesmo)
         je .nova_linha_retira
         cmp rsi, 1
         je .nova_linha_adiciona
+        jmp .nova_linha_adiciona
         ; Chama a sys_write para imprimir a string
     .impressao:
         mov rsi, rdi              ; Ponteiro para a string que ja esta em rdi
@@ -93,23 +94,23 @@ print_string:
         ret                       ; Retorna para onde a funcao foi chamada
     
     .nova_linha_retira:
-        mov al, byte [rdi + rdx - 1]
+        mov al, byte [rdi + rdx - 1] ; Move o penultimo byte de rdi (rdx ja tem o comprimento da string)
         cmp al, 10
-        jne .impressao
-        dec rdx
-        add rdi, rdx
-        mov byte [rdi], 0
-        sub rdi, rdx
+        jne .impressao               ; Se nao for \n, imprime string. Se for, continua
+        dec rdx                      ; Decrementa rdx para nao escrever mais do que o necessario
+        add rdi, rdx                 ; Como rdi age como ponteiro para comeco da string, vai para o final dela
+        mov byte [rdi], 0            ; Zera esse byte (\n -> \0)
+        sub rdi, rdx                 ; Volta rdi para a posicao inicial
         jmp .impressao
 
     .nova_linha_adiciona:
         mov al, byte [rdi + rdx - 1]
         cmp al, 10
-        je .impressao
-        add rdi, rdx
-        mov byte [rdi], 10
-        sub rdi, rdx
-        inc rdx
+        je .impressao                ; Caso ja tenha \n, imprima a string. Caso nao, continue
+        add rdi, rdx                 ; rdi passa para apontar para um \0
+        mov byte [rdi], 10           ; O byte \0 em rdi vira \n
+        sub rdi, rdx                 ; Volta rdi para a posicao inicial
+        inc rdx                      ; Incrementa rdx para comportar o novo caracter
         jmp .impressao
 
 
@@ -124,8 +125,8 @@ coletar_opcao:
 verificar_opcao:
     ; Verifica se a opção está entre '1' e '4'
     mov al, [opcao]               ; Simblozado por [] o valor e passado para al, um registrador de 1 byte
-    cmp al, '1'                   ; Compara com o valor '1'
-    jl .opcao_invalida              ; Se for igual a '1', pula para .opcao_valida
+    cmp al, '1'                   ; Compara com o valor '1' e '4'
+    jl .opcao_invalida            ; Se nao estiver entre eles, vai para a etiqueta de opcao invalida
     cmp al, '4'
     jg .opcao_invalida
 
@@ -198,7 +199,7 @@ int_para_str:
     ret
 
     .loop_comeca:
-        push rcx
+        push rcx                     ; Como rcx sera usado como divisor, salva o valor atual na pilha de memoria
         mov rcx, 10
         
     .loop:
@@ -211,7 +212,7 @@ int_para_str:
         jnz .loop
 
         inc rsi                      ; Ajusta ponteiro para o início da string convertida
-        pop rcx
+        pop rcx                      ; Retorna rcx ao valor anterior
         ret                          ; Retorna com rsi apontando para o resultado
 
 ler_numeros:
@@ -253,7 +254,7 @@ soma:
     call str_para_int
     mov rcx, rax
     
-    add rbx, rcx
+    add rbx, rcx            ; Convertidos os numeros de str para int, adiciona o que se tem em rcx a rbx, e move o resultado para rax
     mov rax, rbx
 
     call int_para_str
@@ -290,7 +291,7 @@ subtracao:
     call str_para_int
     mov rcx, rax
     
-    sub rbx, rcx
+    sub rbx, rcx            ; Subtrai-se o que tem em rcx de rbx, joga o resultado em rbx, e depois em rax
     mov rax, rbx
 
     ;mov rax, resultado_str
@@ -327,7 +328,7 @@ multiplicacao:
     call str_para_int
     mov rcx, rax
     
-    imul rbx, rcx
+    imul rbx, rcx               ; Multiplica-se o que tem em rbx pelo que tem em rcx, resultado fica em rbx, e depois em rax
     mov rax, rbx
 
     ;mov rax, resultado_str
@@ -365,8 +366,8 @@ divisao:
     mov rcx, rax
     
     mov rax, rbx
-    xor rdx, rdx
-    div rcx
+    xor rdx, rdx                ; Instrucao div requer rdx zerado
+    div rcx                     ; Divide-se o que tem em rax pelo que tem em rcx, e o resto fica em rdx
 
     ;mov rax, resultado_str
     call int_para_str
