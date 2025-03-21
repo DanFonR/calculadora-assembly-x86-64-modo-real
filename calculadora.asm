@@ -24,7 +24,9 @@ section .bss
     opcao resb 2                  ; resb 2 para armazenar o numero e o \n quando o usuario apertar enter
     num1 resb 16
     num2 resb 16
-    resultado resb 16
+    resultado_int resb 16
+    resultado_str resb 16
+    str_buffer resb 16
 
 section .text
     global _start
@@ -118,8 +120,67 @@ ler_string:
     syscall                       ; Chama o sistema para ler a entrada
     ret
 
-converte_para_int:
+; Função str_para_int: Converte uma string em um número inteiro (positivo)
+; Parâmetros:
+;   rsi -> Ponteiro para a string a ser convertida
+; Retorno:
+;   rax -> Número inteiro correspondente à string (positivo)
+str_para_int:
+    xor rax, rax            ; Zera rax para armazenar o número convertido
+    xor rcx, rcx            ; Zera rcx (contador de posição na string)
+
+    .loop:
+        movzx rdx, byte [rsi + rcx]  ; Carrega o próximo caractere da string
+        test rdx, rdx                ; Verifica se é o final da string ('\0')
+        jz .done
+
+        cmp rdx, 10                  ; Verifica se é uma quebra de linha '\n'
+        je .done
+
+        sub rdx, '0'                 ; Converte caractere ASCII para número (0-9)
+        imul rax, rax, 10            ; Multiplica rax por 10 (deslocamento decimal)
+        add rax, rdx                 ; Adiciona o dígito convertido
+        inc rcx                      ; Avança para o próximo caractere
+        jmp .loop
+
+    .done:
+        ret                          ; Retorna com o número inteiro armazenado em rax
+
+
+; Função int_para_str: Converte um número inteiro positivo para uma string
+; Parâmetros:
+;   rax -> Número inteiro positivo a ser convertido
+;   rsi -> Ponteiro para o buffer onde a string será armazenada
+; Retorno:
+;   A string é armazenada no buffer apontado por rsi, representando o número em formato de string
+int_para_str:
+    mov rsi, str_buffer              ; Ponteiro para o buffer de saída
+    add rsi, 15                      ; Move para o final do buffer (números são escritos de trás para frente)
+    mov byte [rsi], 0                ; Adiciona terminador nulo '\0'
+    dec rsi
+
+    test rax, rax                    ; Verifica se rax é zero
+    jnz .loop_start
+
+    mov byte [rsi], '0'              ; Se rax for zero, escreve '0' na string
     ret
+
+    .loop_start:
+        push rcx
+        mov rcx, 10
+        
+    .loop:
+        xor rdx, rdx                 ; Limpa rdx para evitar sobras na divisão
+        div rcx               ; Divide rax por 10 (rdx = rax % 10, rax = rax / 10)
+        add dl, '0'                  ; Converte o número para ASCII
+        mov byte [rsi], dl                ; Armazena o caractere na string
+        dec rsi                      ; Move para o próximo caractere
+        test rax, rax                ; Se rax ainda não for zero, continuar
+        jnz .loop
+
+        inc rsi                      ; Ajusta ponteiro para o início da string convertida
+        pop rcx
+        ret                          ; Retorna com rsi apontando para o resultado
 
 ler_numeros:
     mov rdi, num1_msg
@@ -146,6 +207,23 @@ soma:
     call print_string
 
     mov rdi, resultado_msg
+    call print_string
+
+    mov rsi, num1
+    call str_para_int
+    mov rbx, rax
+
+    mov rsi, num2
+    call str_para_int
+    mov rcx, rax
+    
+    add rbx, rcx
+    mov rax, rbx
+
+    ;mov rax, resultado_str
+    call int_para_str
+
+    mov rdi, rsi
     call print_string
 
     jmp finalizar_programa
