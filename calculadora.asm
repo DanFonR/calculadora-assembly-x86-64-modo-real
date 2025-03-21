@@ -20,6 +20,8 @@ section .data
     divisao_msg db ' / ', 0
     resultado_msg db ' = ', 0
 
+    newline db 10
+
 section .bss
     opcao resb 2                  ; resb 2 para armazenar o numero e o \n quando o usuario apertar enter
     num1 resb 16
@@ -93,19 +95,18 @@ verificar_opcao:
     ; Verifica se a opção está entre '1' e '4'
     mov al, [opcao]               ; Simblozado por [] o valor e passado para al, um registrador de 1 byte
     cmp al, '1'                   ; Compara com o valor '1'
-    je .opcao_valida              ; Se for igual a '1', pula para .opcao_valida
-    cmp al, '2'
-    je .opcao_valida
-    cmp al, '3'
-    je .opcao_valida
+    jl .opcao_invalida              ; Se for igual a '1', pula para .opcao_valida
     cmp al, '4'
-    je .opcao_valida
+    jg .opcao_invalida
+
+    jmp .opcao_valida
 
     ; Se nao for uma opcao valida ele mostra uma mensagem de erro e pede para o usuario digitar novamente
-    mov rdi, erro_msg
-    call print_string
-    call coletar_opcao            ; Pede para o usuário inserir novamente
-    call verificar_opcao          ; Valida a nova opção
+    .opcao_invalida:
+        mov rdi, erro_msg
+        call print_string
+        call coletar_opcao            ; Pede para o usuário inserir novamente
+        call verificar_opcao          ; Valida a nova opção
 
     .opcao_valida:
         ret
@@ -238,7 +239,21 @@ subtracao:
     mov rdi, num2
     call print_string
 
-    mov rdi, resultado_msg
+    mov rsi, num1
+    call str_para_int
+    mov rbx, rax
+
+    mov rsi, num2
+    call str_para_int
+    mov rcx, rax
+    
+    sub rbx, rcx
+    mov rax, rbx
+
+    ;mov rax, resultado_str
+    call int_para_str
+
+    mov rdi, rsi
     call print_string
 
     jmp finalizar_programa
@@ -253,7 +268,21 @@ multiplicacao:
     mov rdi, num2
     call print_string
 
-    mov rdi, resultado_msg
+    mov rsi, num1
+    call str_para_int
+    mov rbx, rax
+
+    mov rsi, num2
+    call str_para_int
+    mov rcx, rax
+    
+    imul rbx, rcx
+    mov rax, rbx
+
+    ;mov rax, resultado_str
+    call int_para_str
+
+    mov rdi, rsi
     call print_string
 
     jmp finalizar_programa
@@ -268,7 +297,22 @@ divisao:
     mov rdi, num2
     call print_string
 
-    mov rdi, resultado_msg
+    mov rsi, num1
+    call str_para_int
+    mov rbx, rax
+
+    mov rsi, num2
+    call str_para_int
+    mov rcx, rax
+    
+    mov rax, rbx
+    xor rdx, rdx
+    div rcx
+
+    ;mov rax, resultado_str
+    call int_para_str
+
+    mov rdi, rsi
     call print_string
 
     jmp finalizar_programa
