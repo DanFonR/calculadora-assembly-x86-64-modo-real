@@ -35,15 +35,18 @@ section .text
 
 _start:
     mov rdi, menu_msg             ; Passa o endereço de menu_mgs para o parâmetro (rdi)
+    mov rsi, 0
     call print_string             ; Chama a função print_message
 
     call coletar_opcao            ; Chama a função que coleta a opção
     call verificar_opcao          ; Verifica a opcao escolhida
     
     mov rdi, opcao_escolhida_msg
+    mov rsi, 0
     call print_string
     
     mov rdi, opcao
+    mov rsi, 1
     call print_string
 
     call ler_numeros
@@ -63,6 +66,7 @@ _start:
 ; Funcao print_string: Imprime uma string no terminal
 ; Parametros:
 ;   rdi -> Ponteiro para a string a ser impressa
+;   rsi -> boolean (0 retira newline caso tenha, 1 imprime com newline)
 print_string:
     ; Calcula o comprimento da string
     xor rdx, rdx                  ; rdx sera o comprimento da string (inicializa o registrador com 0)
@@ -76,12 +80,38 @@ print_string:
         jmp .prox_char            ; Volta para o inicio de .prox_char fazendo um loop
 
     .tam_encontrado:
+        cmp rsi, 0
+        je .newline_rem
+        cmp rsi, 1
+        je .newline_add
         ; Chama a sys_write para imprimir a string
+    .impressao:
         mov rsi, rdi              ; Ponteiro para a string que ja esta em rdi
         mov rdi, 1                ; Saída padrão (1 = STDOUT)
         mov rax, 1                ; Número da chamada sys_write
         syscall                   ; Chamada de sistema para escrever
         ret                       ; Retorna para onde a funcao foi chamada
+    
+    .newline_rem:
+        mov al, byte [rdi + rdx - 1]
+        cmp al, 10
+        jne .impressao
+        dec rdx
+        add rdi, rdx
+        mov byte [rdi], 0
+        sub rdi, rdx
+        jmp .impressao
+
+    .newline_add:
+        mov al, byte [rdi + rdx - 1]
+        cmp al, 10
+        je .impressao
+        add rdi, rdx
+        mov byte [rdi], 10
+        sub rdi, rdx
+        inc rdx
+        jmp .impressao
+
 
 coletar_opcao:
     mov rdi, 0                    ; Leitura da entrada padrão (0 = STDIN)
@@ -104,6 +134,7 @@ verificar_opcao:
     ; Se nao for uma opcao valida ele mostra uma mensagem de erro e pede para o usuario digitar novamente
     .opcao_invalida:
         mov rdi, erro_msg
+        mov rsi, 0
         call print_string
         call coletar_opcao            ; Pede para o usuário inserir novamente
         call verificar_opcao          ; Valida a nova opção
@@ -185,12 +216,14 @@ int_para_str:
 
 ler_numeros:
     mov rdi, num1_msg
+    mov rsi, 0
     call print_string
 
     mov rsi, num1
     call ler_string
 
     mov rdi, num2_msg
+    mov rsi, 0
     call print_string
 
     mov rsi, num2
@@ -199,12 +232,14 @@ ler_numeros:
 
 soma:
     mov rdi, num1
+    mov rsi, 0
     call print_string
 
     mov rdi, soma_msg
     call print_string
 
     mov rdi, num2
+    mov rsi, 0
     call print_string
 
     mov rdi, resultado_msg
@@ -221,22 +256,30 @@ soma:
     add rbx, rcx
     mov rax, rbx
 
-    ;mov rax, resultado_str
     call int_para_str
 
     mov rdi, rsi
+    mov rsi, 1
     call print_string
+
 
     jmp finalizar_programa
 
 subtracao:
     mov rdi, num1
+    mov rsi, 0
     call print_string
 
     mov rdi, subtracao_msg
+    mov rsi, 0
     call print_string
 
     mov rdi, num2
+    mov rsi, 0
+    call print_string
+
+    mov rdi, resultado_msg
+    mov rsi, 0
     call print_string
 
     mov rsi, num1
@@ -254,18 +297,26 @@ subtracao:
     call int_para_str
 
     mov rdi, rsi
+    mov rsi, 1
     call print_string
 
     jmp finalizar_programa
 
 multiplicacao:
     mov rdi, num1
+    mov rsi, 0
     call print_string
 
     mov rdi, multiplicacao_msg
+    mov rsi, 0
     call print_string
 
     mov rdi, num2
+    mov rsi, 0
+    call print_string
+
+    mov rdi, resultado_msg
+    mov rsi, 0
     call print_string
 
     mov rsi, num1
@@ -283,18 +334,26 @@ multiplicacao:
     call int_para_str
 
     mov rdi, rsi
+    mov rsi, 1
     call print_string
 
     jmp finalizar_programa
 
 divisao:
     mov rdi, num1
+    mov rsi, 0
     call print_string
 
     mov rdi, divisao_msg
+    mov rsi, 0
     call print_string
 
     mov rdi, num2
+    mov rsi, 0
+    call print_string
+
+    mov rdi, resultado_msg
+    mov rsi, 0
     call print_string
 
     mov rsi, num1
@@ -313,6 +372,7 @@ divisao:
     call int_para_str
 
     mov rdi, rsi
+    mov rsi, 1
     call print_string
 
     jmp finalizar_programa
